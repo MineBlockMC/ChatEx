@@ -32,10 +32,4 @@ public class HookManager {
         Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("PlaceholderAPI");
         return plugin != null && plugin.isEnabled();
     }
-
-    public static boolean checkEssentials() {
-        Plugin plugin = Bukkit.getServer().getPluginManager().getPlugin("Essentials");
-        return plugin != null && plugin.isEnabled();
-    }
-
 }
