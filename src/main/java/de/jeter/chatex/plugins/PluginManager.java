@@ -16,6 +16,9 @@
 package de.jeter.chatex.plugins;
 
 import de.jeter.chatex.ChatEx;
+import de.jeter.chatex.EssentialsAFKListener;
+import de.jeter.chatex.PurpurAFKListener;
+import de.jeter.chatex.utils.Config;
 import de.jeter.chatex.utils.HookManager;
 import de.jeter.chatex.utils.Utils;
 import org.bukkit.entity.Player;
@@ -40,6 +43,18 @@ public class PluginManager implements PermissionsPlugin {
 
         if (HookManager.checkPlaceholderAPI()) {
             ChatEx.getInstance().getLogger().info("Hooked into PlaceholderAPI");
+        }
+
+        if (Config.AFK_PLACEHOLDER.getBoolean()) {
+            if (HookManager.checkEssentials()) {
+                ChatEx.getInstance().getLogger().info("Hooked into Essentials");
+                ChatEx.getInstance().getServer().getPluginManager().registerEvents(new EssentialsAFKListener(), ChatEx.getInstance());
+            } else if (HookManager.checkPurpur()) {
+                ChatEx.getInstance().getLogger().info("Hooked into Purpur");
+                ChatEx.getInstance().getServer().getPluginManager().registerEvents(new PurpurAFKListener(), ChatEx.getInstance());
+            } else {
+                ChatEx.getInstance().getLogger().warning("Error while enabling AFK placeholder, neither essentials nor purpur were found!");
+            }
         }
     }
 

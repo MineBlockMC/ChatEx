@@ -21,9 +21,11 @@ package de.jeter.chatex.utils;
 import de.jeter.chatex.ChatEx;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.event.EventPriority;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -43,7 +45,8 @@ public enum Config {
     RANGE("chat-range", 100, "The range to talk to other players. Set to -1 to enable world-wide-chat"),
     LOGCHAT("logChat", false, "Should the chat be logged?"),
     DEBUG("debug", false, "Should the debug log be enabled?"),
-    LOCALE("Locale", "en-EN", "Which language do you want? (You can choose betwenn de-DE, fr-FR, pt-BR and en-EN by default.)"),
+    PRIORITY("EventPriority", EventPriority.NORMAL.name(), "Choose the Eventpriority here of ChatEx. Listeners are called in following order: LOWEST -> LOW -> NORMAL -> HIGH -> HIGHEST -> MONITOR"),
+    LOCALE("Locale", "en-EN", "Which language do you want? (You can choose betwenn de-DE, fr-FR, pt-BR, zh-CN and en-EN by default.)"),
     ADS_ENABLED("Ads.Enabled", true, "Should we check for ads?"),
     ADS_BYPASS("Ads.Bypass", Arrays.asList("127.0.0.1", "my-domain.com"), "A list with allowed ips or domains."),
     ADS_LOG("Ads.Log", true, "Should the ads be logged in a file?"),
@@ -64,18 +67,54 @@ public enum Config {
     TABLIST_FORMAT("Tablist.format", "%prefix%player%suffix", "The format of the tablist name"),
     CHANGE_JOIN_AND_QUIT("Messages.JoinAndQuit.Enabled", false, "Do you want to change the join and the quit messages?"),
     RGB_COLORS("colors", null, "Requires 1.16+, Colors you want to use."),
-    RGB_COLORS_EXAMPLE("colors.$g", "#00ff00", "Default color code. &g in chat will be used with the #00ff00.");
+    RGB_COLORS_EXAMPLE("colors.$g", "#00ff00", "Default color code. &g in chat will be used with the #00ff00."),
+    AFK_PLACEHOLDER("AfkPlaceholder.Enabled", false, "Enable the %afk placeholder. You can use it to display AFK players on tablist. (Requires Essentials or Purpur)."),
+    AFK_FORMAT("AfkPlaceholder.format", "&r[&7AFK&r] ", "The format of the afk placeholder.");
 
+    private static final File f = new File(ChatEx.getInstance().getDataFolder(), "config.yml");
+    private static YamlConfiguration cfg;
     private final Object value;
     private final String path;
     private final String description;
-    private static YamlConfiguration cfg;
-    private static final File f = new File(ChatEx.getInstance().getDataFolder(), "config.yml");
 
     Config(String path, Object val, String description) {
         this.path = path;
         this.value = val;
         this.description = description;
+    }
+
+    public static void load() {
+        ChatEx.getInstance().getDataFolder().mkdirs();
+        reload(false);
+        List<String> header = new ArrayList<>();
+        for (Config c : values()) {
+            header.add(c.getPath() + ": " + c.getDescription());
+            if (!cfg.contains(c.getPath())) {
+                c.set(c.getDefaultValue(), false);
+            }
+        }
+        try {
+            cfg.options().setHeader(header);
+        } catch (NoSuchMethodError e) {
+            String headerString = "";
+            for (String s : header) {
+                headerString += s + System.lineSeparator();
+            }
+            cfg.options().header(headerString);
+        }
+        try {
+            cfg.save(f);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public static void reload(boolean complete) {
+        if (!complete) {
+            cfg = YamlConfiguration.loadConfiguration(f);
+            return;
+        }
+        load();
     }
 
     public String getPath() {
@@ -114,24 +153,6 @@ public enum Config {
         return cfg.getConfigurationSection(path);
     }
 
-    public static void load() {
-        ChatEx.getInstance().getDataFolder().mkdirs();
-        reload(false);
-        StringBuilder header = new StringBuilder();
-        for (Config c : values()) {
-            header.append(c.getPath()).append(": ").append(c.getDescription()).append(System.lineSeparator());
-            if (!cfg.contains(c.getPath())) {
-                c.set(c.getDefaultValue(), false);
-            }
-        }
-        cfg.options().header(header.toString());
-        try {
-            cfg.save(f);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
     public void set(Object value, boolean save) {
         cfg.set(path, value);
         if (save) {
@@ -142,13 +163,5 @@ public enum Config {
             }
             reload(false);
         }
-    }
-
-    public static void reload(boolean complete) {
-        if (!complete) {
-            cfg = YamlConfiguration.loadConfiguration(f);
-            return;
-        }
-        load();
     }
 }
